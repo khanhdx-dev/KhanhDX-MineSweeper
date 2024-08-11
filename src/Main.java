@@ -120,24 +120,26 @@ public class Main {
             }
 
             won = true;
-            for(Mine mine : mines)
+            mines.forEach(mine -> {
                 if(getMarker(mine.x(), mine.y()) == null)
                     won = false;
+            });
+
             if(won)
             {
                 running = false;
 
-                for(Square square : squares)
+                squares.forEach(square -> {
                     if(!square.isVisible())
                         square.setVisible(true);
+                });
             }
         }
 
-        for(Mine mine : mines)
-        {
+        mines.forEach(mine -> {
             squares.add(mine);
             mine.setVisible(true);
-        }
+        });
 
         drawGrid();
 
@@ -160,14 +162,6 @@ public class Main {
     {
         Random random = new Random();
         return random.nextInt((max - min) + 1) + min;
-    }
-
-    public static Mine getMine(int x, int y)
-    {
-        for(Mine mine : mines)
-            if(mine.x() == x && mine.y() == y)
-                return mine;
-        return null;
     }
 
     public static int getNearMinesNumber(int x, int y)
@@ -323,16 +317,23 @@ public class Main {
     }
 
     public static Square getSquare(int x, int y) {
-        for(Square square : squares)
-            if(square.x() == x && square.y() == y)
-                return square;
-        return null;
+        return squares.stream()
+                .filter(square -> square.x() == x && square.y() == y)
+                .findFirst()
+                .orElse(null);
     }
 
     public static Marker getMarker(int x, int y) {
-        for(Marker marker : markers)
-            if(marker.x() == x && marker.y() == y)
-                return marker;
-        return null;
+        return markers.stream()
+                .filter(marker -> marker.x() == x && marker.y() == y)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static Mine getMine(int x, int y) {
+        return mines.stream()
+                .filter(mine -> mine.x() == x && mine.y() == y)
+                .findFirst()
+                .orElse(null);
     }
 }
