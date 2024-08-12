@@ -1,4 +1,6 @@
-class Safe extends Square
+package com.khanhdx.app.models;
+
+public class Safe extends Square
 {
   public Safe(int x, int y)
   {

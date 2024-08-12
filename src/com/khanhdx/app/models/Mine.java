@@ -1,4 +1,6 @@
-class Mine extends Square
+package com.khanhdx.app.models;
+
+public class Mine extends Square
 {
   public Mine(int x, int y)
   {

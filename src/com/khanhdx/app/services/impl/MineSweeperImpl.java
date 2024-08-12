@@ -1,86 +1,60 @@
+package com.khanhdx.app.services.impl;
+
+import com.khanhdx.app.Main;
+import com.khanhdx.app.models.Marker;
+import com.khanhdx.app.models.Mine;
+import com.khanhdx.app.models.Safe;
+import com.khanhdx.app.models.Square;
+import com.khanhdx.app.models.Number;
+import com.khanhdx.app.services.MineSweeper;
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
-public class Main {
+public class MineSweeperImpl implements MineSweeper {
+    private ArrayList<Square> squares;
+    private ArrayList<Marker> markers;
+    private ArrayList<Mine> mines;
+    private boolean running;
+    private boolean won;
+    private Integer colNRow;
+    private Integer minesAmount;
 
-    private static ArrayList<Square> squares;
-    private static ArrayList<Marker> markers;
-    private static ArrayList<Mine> mines;
-    private static boolean running;
-    private static boolean won;
-    private static Integer colNRow;
-    private static Integer minesAmount;
-
-//    This method will be called whenever the game restarts
-    private static void initialProperties(){
-        squares = new ArrayList<>();
-        markers = new ArrayList<>();
-        mines = new ArrayList<>();
-        running = true;
-        won = false;
-        colNRow = 3;
-        minesAmount = 2;
-    }
-
-
-    public static void main(String[] args) {
-
+    public void start() {
         System.out.println("Welcome to Minesweeper!");
 
         initialProperties();
 
-        Scanner sc = new Scanner(System.in);
-
-        //validate input
-        do {
-            if (colNRow <= 2) System.out.println("Minimum size of the grid is 2");
-            if (colNRow > 10) System.out.println("Maximum size of the grid is 10");
-            System.out.print("Enter the size of the grid (e.g 4 for a 4x4 grid): ");
-            colNRow = sc.nextInt();
-        } while(colNRow < 2 || colNRow > 10);
-        do {
-            if (minesAmount >= (int) (Math.pow(colNRow,2)) * (35.0f / 100.0f)) {
-                System.out.println("Invalid input, pls try again!!!");
-            } else if (minesAmount < 2) {
-                System.out.println("Invalid input, pls try again!!!");
-            }
-            System.out.print("Enter the number of mines to place on the grid (maximum is 35% of the total squares): ");
-            minesAmount = sc.nextInt();
-        } while ((minesAmount >= (int) (Math.pow(colNRow,2)) * (35.0f / 100.0f)) || minesAmount < 2);
+        validateInput();
 
         int minesLeft = minesAmount;
 
-        //random generate mines
-        while(mines.size() < minesAmount)
-        {
-            int x = randomInt(1, colNRow);
-            int y = randomInt(1, colNRow);
+        generateMines(minesAmount);
 
-            if(getMine(x, y) == null) mines.add(new Mine(x, y));
-        }
+//        System.out.println(mines.get(0).x() +" " +mines.get(0).y());   //For debugging purpose to get mine's position
 
-//        System.out.println(mines.get(0).x() +" " +mines.get(0).y());   //For debugging purpose
+        setupNearMinesNumber();
 
-        // Setup near mines amount for each Square
-        for(int x = 1; x < colNRow + 1; x++)
-        {
-            for(int y = 1; y < colNRow + 1; y++)
-            {
-                if(getMine(x, y) == null)
-                {
-                    int nearMinesAmount = getNearMinesNumber(x, y);
-                    if(nearMinesAmount > 0) squares.add(new Number(x, y, nearMinesAmount));
-                    else squares.add(new Safe(x, y));
-                }
-            }
-        }
+        beginPlaying(minesLeft);
 
-        Scanner scanner = new Scanner(System.in);
+//        Reveal everything when the game is done
+        mines.forEach(mine -> {
+            squares.add(mine);
+            mine.setVisible(true);
+        });
+        drawGrid();
 
+        printResult();
+
+        Main main = new Main();
+        main.main(null);
+    }
+
+    private void beginPlaying(int minesLeft) {
         // Begin the game
-        while(running)
-        {
+        Scanner scanner = new Scanner(System.in);
+        while(running) {
             drawGrid();
 
             System.out.println("Remaining Marker: " + minesLeft);
@@ -119,53 +93,75 @@ public class Main {
                 }
             }
 
-            won = true;
-            mines.forEach(mine -> {
-                if(getMarker(mine.x(), mine.y()) == null)
-                    won = false;
-            });
-
-            if(won)
-            {
-                running = false;
-
-                squares.forEach(square -> {
-                    if(!square.isVisible())
-                        square.setVisible(true);
-                });
+            won = isWon();
+            if(won) {
+                finishGame();
             }
         }
-
-        mines.forEach(mine -> {
-            squares.add(mine);
-            mine.setVisible(true);
-        });
-
-        drawGrid();
-
-        if(won) {
-            System.out.println("Congratulations, you have won the game!");
-        }
-        else {
-            System.out.println("Oh no, you detonated a mine! Game over.");
-        }
-        System.out.println("Press any key to try again...");
-        scanner.next();
-
-        initialProperties();
-        main(null);
-
-        scanner.close();
     }
 
-    public static int randomInt(int min, int max)
-    {
+    //validate input
+    private void validateInput(){
+        Scanner sc = new Scanner(System.in);
+        do {
+            if (colNRow <= 2) System.out.println("Minimum size of the grid is 2");
+            if (colNRow > 10) System.out.println("Maximum size of the grid is 10");
+            System.out.print("Enter the size of the grid (e.g 4 for a 4x4 grid): ");
+            colNRow = sc.nextInt();
+        } while(colNRow < 2 || colNRow > 10);
+        do {
+            if (minesAmount >= (int) (Math.pow(colNRow,2)) * (35.0f / 100.0f)) {
+                System.out.println("Invalid input, pls try again!!!");
+            } else if (minesAmount < 2) {
+                System.out.println("Invalid input, pls try again!!!");
+            }
+            System.out.print("Enter the number of mines to place on the grid (maximum is 35% of the total squares): ");
+            minesAmount = sc.nextInt();
+        } while ((minesAmount >= (int) (Math.pow(colNRow,2)) * (35.0f / 100.0f)) || minesAmount < 2);
+
+    }
+
+    private void generateMines(Integer minesAmount){
+        //random generate mines
+        while(mines.size() < minesAmount)
+        {
+            int x = randomInt(1, colNRow);
+            int y = randomInt(1, colNRow);
+
+            if(getMine(x, y) == null) mines.add(new Mine(x, y));
+        }
+    }
+
+    //    This method will be called whenever the game restarts
+    private void initialProperties(){
+        squares = new ArrayList<>();
+        markers = new ArrayList<>();
+        mines = new ArrayList<>();
+        running = true;
+        won = false;
+        colNRow = 3;
+        minesAmount = 2;
+    }
+
+    private void setupNearMinesNumber(){
+        // Setup near mines amount for each Square
+        for(int x = 1; x < colNRow + 1; x++) {
+            for(int y = 1; y < colNRow + 1; y++) {
+                if(getMine(x, y) == null) {
+                    int nearMinesAmount = getNearMinesNumber(x, y);
+                    if(nearMinesAmount > 0) squares.add(new Number(x, y, nearMinesAmount));
+                    else squares.add(new Safe(x, y));
+                }
+            }
+        }
+    }
+
+    private int randomInt(int min, int max) {
         Random random = new Random();
         return random.nextInt((max - min) + 1) + min;
     }
 
-    public static int getNearMinesNumber(int x, int y)
-    {
+    private int getNearMinesNumber(int x, int y) {
         int count = 0;
 
         // check top left
@@ -211,8 +207,7 @@ public class Main {
         return count;
     }
 
-    public static void drawGrid()
-    {
+    private void drawGrid() {
         char innerVertical = ' ';
 
         StringBuilder letters = new StringBuilder();
@@ -265,8 +260,8 @@ public class Main {
         }
     }
 
-//    Method to show the square
-    public static void recursiveShow(int x, int y) {
+    //    Method to show the square
+    private void recursiveShow(int x, int y) {
         Square square = getSquare(x, y);
         if(square == null)
             return;
@@ -316,24 +311,54 @@ public class Main {
         }
     }
 
-    public static Square getSquare(int x, int y) {
+    private Square getSquare(int x, int y) {
         return squares.stream()
                 .filter(square -> square.x() == x && square.y() == y)
                 .findFirst()
                 .orElse(null);
     }
 
-    public static Marker getMarker(int x, int y) {
+    private Marker getMarker(int x, int y) {
         return markers.stream()
                 .filter(marker -> marker.x() == x && marker.y() == y)
                 .findFirst()
                 .orElse(null);
     }
 
-    public static Mine getMine(int x, int y) {
+    private Mine getMine(int x, int y) {
         return mines.stream()
                 .filter(mine -> mine.x() == x && mine.y() == y)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private boolean isWon(){
+        won = true;
+        mines.forEach(mine -> {
+            if(getMarker(mine.x(), mine.y()) == null)
+                won = false;
+        });
+        return won;
+    }
+
+    private void finishGame() {
+        running = false;
+
+        squares.forEach(square -> {
+            if(!square.isVisible())
+                square.setVisible(true);
+        });
+    }
+
+    private void printResult() {
+        Scanner scanner = new Scanner(System.in);
+        if(won) {
+            System.out.println("Congratulations, you have won the game!");
+        }
+        else {
+            System.out.println("Oh no, you detonated a mine! Game over.");
+        }
+        System.out.println("Press any key to try again...");
+        scanner.next();
     }
 }

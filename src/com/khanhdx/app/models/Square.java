@@ -1,4 +1,6 @@
-abstract class Square
+package com.khanhdx.app.models;
+
+public abstract class Square
 {
   private int x;
   private int y;
@@ -31,5 +33,5 @@ abstract class Square
     this.visible = visible;
   }
 
-  abstract char c();
+  public abstract char c();
 }

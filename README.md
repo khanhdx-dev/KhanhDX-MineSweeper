@@ -1,4 +1,4 @@
-# MineSweeper
+# com.khanhdx.app.services.impl.MineSweeperImpl
 
 How to play:
 * Enter grid column size (the size must be between 3 and 10).

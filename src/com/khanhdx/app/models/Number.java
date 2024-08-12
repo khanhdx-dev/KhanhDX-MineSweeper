@@ -1,4 +1,6 @@
-class Number extends Square
+package com.khanhdx.app.models;
+
+public class Number extends Square
 {
   private int number;
 

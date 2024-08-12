@@ -1,4 +1,6 @@
-class Marker extends Square
+package com.khanhdx.app.models;
+
+public class Marker extends Square
 {
   public Marker(int x, int y)
   {
