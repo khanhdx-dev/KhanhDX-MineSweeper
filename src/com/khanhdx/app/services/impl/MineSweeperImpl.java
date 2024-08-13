@@ -1,16 +1,12 @@
 package com.khanhdx.app.services.impl;
 
 import com.khanhdx.app.Main;
-import com.khanhdx.app.models.Marker;
-import com.khanhdx.app.models.Mine;
-import com.khanhdx.app.models.Safe;
-import com.khanhdx.app.models.Square;
 import com.khanhdx.app.models.Number;
+import com.khanhdx.app.models.*;
 import com.khanhdx.app.services.MineSweeper;
 
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Scanner;
 
 public class MineSweeperImpl implements MineSweeper {
     private ArrayList<Square> squares;
@@ -20,6 +16,16 @@ public class MineSweeperImpl implements MineSweeper {
     private boolean won;
     private Integer colNRow;
     private Integer minesAmount;
+
+    private ScannerWrapper scanner;
+
+    public ScannerWrapper getScanner() {
+        return scanner == null ? new ScannerWrapper() : scanner;
+    }
+
+    public void setScanner(ScannerWrapper scanner) {
+        this.scanner = scanner;
+    }
 
     public void start() {
         System.out.println("Welcome to Minesweeper!");
@@ -47,19 +53,20 @@ public class MineSweeperImpl implements MineSweeper {
 
         printResult();
 
-        Main main = new Main();
-        main.main(null);
+        if (printResult() != 0){
+            start();
+        }
     }
 
     private void beginPlaying(int minesLeft) {
         // Begin the game
-        Scanner scanner = new Scanner(System.in);
+        getScanner().refresh();
         while(running) {
             drawGrid();
 
             System.out.println("Remaining Marker: " + minesLeft);
             System.out.println("R - Reveal, M - Mark");
-            String input = scanner.nextLine().toUpperCase();
+            String input = getScanner().nextLine().toUpperCase();
 
             if(input.equals("")) continue;
 
@@ -102,12 +109,12 @@ public class MineSweeperImpl implements MineSweeper {
 
     //validate input
     private void validateInput(){
-        Scanner sc = new Scanner(System.in);
+        getScanner().refresh();
         do {
             if (colNRow <= 2) System.out.println("Minimum size of the grid is 2");
             if (colNRow > 10) System.out.println("Maximum size of the grid is 10");
             System.out.print("Enter the size of the grid (e.g 4 for a 4x4 grid): ");
-            colNRow = sc.nextInt();
+            colNRow = getScanner().nextInt();
         } while(colNRow < 2 || colNRow > 10);
         do {
             if (minesAmount >= (int) (Math.pow(colNRow,2)) * (35.0f / 100.0f)) {
@@ -116,7 +123,7 @@ public class MineSweeperImpl implements MineSweeper {
                 System.out.println("Invalid input, pls try again!!!");
             }
             System.out.print("Enter the number of mines to place on the grid (maximum is 35% of the total squares): ");
-            minesAmount = sc.nextInt();
+            minesAmount = getScanner().nextInt();
         } while ((minesAmount >= (int) (Math.pow(colNRow,2)) * (35.0f / 100.0f)) || minesAmount < 2);
 
     }
@@ -350,15 +357,17 @@ public class MineSweeperImpl implements MineSweeper {
         });
     }
 
-    private void printResult() {
-        Scanner scanner = new Scanner(System.in);
+    public int printResult() {
+        getScanner().refresh();
         if(won) {
             System.out.println("Congratulations, you have won the game!");
-        }
-        else {
+        } else {
             System.out.println("Oh no, you detonated a mine! Game over.");
         }
         System.out.println("Press any key to try again...");
-        scanner.next();
+        String anyKey = getScanner().next();
+        if (anyKey.equals("exit")){
+            return 0;
+        } else return 1;
     }
 }
